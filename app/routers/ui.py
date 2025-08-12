@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 from app.models.profile import ProfileIn
 from app.models.meal import MealIn
-from app.services.meal_service import save_meal_to_stores, to_when_date_str
+from app.services.meal_service import save_meal_to_stores, to_when_date_str  # 修正: インポート追加
 from app.external.openai_client import vision_extract_meal_bytes
 from app.database.firestore import user_doc, get_latest_profile
 from app.database.bigquery import bq_upsert_profile
@@ -110,8 +110,6 @@ async def ui_meal_image_no_store(
         return JSONResponse({"ok": False, "error": "OPENAI_API_KEY not set"}, status_code=500)
 
     # 画像→OpenAI
-    data_url = f"data:{mime};base64,{base64.b64encode(data).decode()}"
-    
     try:
         text = await vision_extract_meal_bytes(data, mime)
     except Exception as e:
