@@ -16,3 +16,8 @@ class ProfileIn(BaseModel):
     ]]] = None  # 既往歴
     medications: Optional[str] = None  # 現在の服薬
     allergies: Optional[str] = None    # アレルギー
+    
+    # Pydantic v2 対応
+    def dict(self):
+        """Pydantic v1互換のdict()メソッド"""
+        return self.model_dump()
