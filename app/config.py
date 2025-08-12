@@ -22,7 +22,7 @@ class Settings:
     LINE_ACCESS_TOKEN: Optional[str] = os.getenv("LINE_ACCESS_TOKEN")
     LINE_USER_ID: Optional[str] = os.getenv("LINE_USER_ID")
     
-    # OpenAI
+    # OpenAI - デフォルトをgpt-4oに変更（Chat Completions APIで確実に動作する）
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o")
     
