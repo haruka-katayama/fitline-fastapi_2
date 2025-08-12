@@ -28,9 +28,22 @@ def bq_upsert_profile(user_id: str = "demo") -> Dict[str, Any]:
     past_history = ",".join(prof.get("past_history") or [])
     
     # 実際のスキーマに合わせたデータ準備
+    # updated_atがISO文字列の場合、TIMESTAMPに変換
+    updated_at_str = prof.get("updated_at") or datetime.now(timezone.utc).isoformat()
+    if isinstance(updated_at_str, str):
+        try:
+            # ISO文字列をdatetimeオブジェクトに変換
+            if updated_at_str.endswith('Z'):
+                updated_at_str = updated_at_str[:-1] + '+00:00'
+            updated_at = datetime.fromisoformat(updated_at_str)
+        except ValueError:
+            updated_at = datetime.now(timezone.utc)
+    else:
+        updated_at = updated_at_str
+    
     row = {
         "user_id": user_id,
-        "updated_at": prof.get("updated_at") or datetime.now(timezone.utc).isoformat(),
+        "updated_at": updated_at,  # datetimeオブジェクトとして渡す
         "age": prof.get("age"),
         "sex": prof.get("sex"),
         "height_cm": prof.get("height_cm"),
@@ -119,7 +132,12 @@ def bq_upsert_profile(user_id: str = "demo") -> Dict[str, Any]:
         query_job = bq_client.query(merge_query, job_config=job_config)
         query_job.result()  # 完了まで待機
         
-        return {"ok": True, "method": "merge", "rows_affected": query_job.num_dml_affected_rows}
+        return {
+            "ok": True, 
+            "method": "merge", 
+            "rows_affected": query_job.num_dml_affected_rows,
+            "user_id": user_id
+        }
         
     except Exception as e:
         print(f"[ERROR] MERGE failed, trying DELETE+INSERT: {e}")
@@ -136,15 +154,29 @@ def bq_upsert_profile(user_id: str = "demo") -> Dict[str, Any]:
             delete_job = bq_client.query(delete_query, job_config=delete_job_config)
             delete_job.result()
             
-            # 新しいレコードを挿入
-            errors = bq_client.insert_rows_json(table_id, [row], ignore_unknown_values=True)
+            # 新しいレコードを挿入（datetimeをISO文字列に変換）
+            insert_row = row.copy()
+            insert_row["updated_at"] = row["updated_at"].isoformat()
+            
+            errors = bq_client.insert_rows_json(table_id, [insert_row], ignore_unknown_values=True)
             if errors:
                 return {"ok": False, "method": "delete+insert", "errors": errors}
             
-            return {"ok": True, "method": "delete+insert", "deleted": delete_job.num_dml_affected_rows}
+            return {
+                "ok": True, 
+                "method": "delete+insert", 
+                "deleted": delete_job.num_dml_affected_rows,
+                "user_id": user_id
+            }
             
         except Exception as e2:
-            return {"ok": False, "method": "failed", "merge_error": str(e), "delete_insert_error": str(e2)}
+            return {
+                "ok": False, 
+                "method": "failed", 
+                "merge_error": str(e), 
+                "delete_insert_error": str(e2),
+                "user_id": user_id
+            }
 
 def bq_upsert_fitbit_days(user_id: str, days: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Fitbit日次データをBigQueryに保存（日付パーティションごとに上書き）"""
