@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Form
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from app.external.healthplanet_client import (
-    get_oauth_url, exchange_code_for_token, healthplanet_token_doc, 
-    is_env_configured, jst_now
+    get_oauth_url, exchange_code_for_token, is_env_configured, jst_now
 )
+from app.database.firestore import healthplanet_token_doc  # 修正: 正しいインポート
 from app.services.healthplanet_service import (
     fetch_last7_data, parse_innerscan_for_prompt, 
     summarize_for_prompt, save_to_bigquery
