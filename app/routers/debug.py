@@ -23,15 +23,29 @@ def debug_env():
 
 @router.get("/openai_ping")
 async def debug_openai_ping():
-    """OpenAI接続テスト"""
+    """OpenAI接続テスト（Chat Completions API）"""
     if not settings.OPENAI_API_KEY:
         return JSONResponse({"ok": False, "reason": "OPENAI_API_KEY not set"}, status_code=500)
     
-    headers = {"Authorization": f"Bearer {settings.OPENAI_API_KEY}", "Content-Type": "application/json"}
-    body = {"model": settings.OPENAI_MODEL, "input": [{"role": "user", "content": [{"type": "input_text", "text": "ping"}]}]}
+    headers = {
+        "Authorization": f"Bearer {settings.OPENAI_API_KEY}", 
+        "Content-Type": "application/json"
+    }
+    
+    # Chat Completions API形式に修正
+    body = {
+        "model": settings.OPENAI_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": "ping"
+            }
+        ],
+        "max_tokens": 10
+    }
     
     async with httpx.AsyncClient(timeout=30) as c:
-        r = await c.post("https://api.openai.com/v1/responses", headers=headers, json=body)
+        r = await c.post("https://api.openai.com/v1/chat/completions", headers=headers, json=body)
     
     ct = r.headers.get("content-type", "").lower()
     if "application/json" in ct:
