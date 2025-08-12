@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from app.external.openai_client import ask_gpt5
 from app.external.line_client import push_line
-from app.services.fitbit_service import fitbit_last_n_days, save_last7_fitbit_to_stores
 from app.services.meal_service import meals_last_n_days
 from app.database.firestore import get_latest_profile, user_doc
 from app.database.bigquery import bq_upsert_profile, bq_insert_rows, bq_client
@@ -106,13 +105,13 @@ def build_weekly_prompt(days: List[Dict[str, Any]], meals_by_day: Dict[str, List
 async def daily_coaching() -> Dict[str, Any]:
     """日次コーチングを実行"""
     try:
-        from app.services.fitbit_service import fitbit_today_core
+        # 循環インポートを避けるため、ここで import
+        from app.services.fitbit_service import fitbit_today_core, save_fitbit_daily_firestore
         
         # 今日のFitbitデータ取得
         day = await fitbit_today_core()
         
         # Firestore保存
-        from app.services.fitbit_service import save_fitbit_daily_firestore
         saved = save_fitbit_daily_firestore("demo", day)
         
         # BigQuery保存
@@ -144,15 +143,17 @@ async def daily_coaching() -> Dict[str, Any]:
 async def weekly_coaching(dry: bool = False, show_prompt: bool = False) -> Dict[str, Any]:
     """週次コーチングを実行"""
     try:
+        # 循環インポートを避けるため、ここで import
+        from app.services.fitbit_service import fitbit_last_n_days, save_fitbit_daily_firestore
+        from app.database.bigquery import bq_upsert_fitbit_days
+        
         # 直近7日 Fitbit
         days = await fitbit_last_n_days(7)
         
         # Firestore保存
-        from app.services.fitbit_service import save_fitbit_daily_firestore
         saved = [save_fitbit_daily_firestore("demo", d) for d in days]
         
         # BigQuery保存
-        from app.database.bigquery import bq_upsert_fitbit_days
         bq_fitbit = bq_upsert_fitbit_days("demo", days)
         bq_prof   = bq_upsert_profile("demo")
         
