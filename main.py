@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# ルーターのインポート
+# ルーターのインポート（修正版）
 from app.routers import (
     health, ui, fitbit, healthplanet, 
     weight, meals, coaching, cron, debug
