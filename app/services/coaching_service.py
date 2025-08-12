@@ -257,4 +257,23 @@ async def monthly_coaching() -> Dict[str, Any]:
     user_doc("demo").collection("coach_monthly").document(month_str).set({
         "month": month_str,
         "text": monthly_text,
-        "created_
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "stats": {
+            "avg_steps": int(fb['avg_steps']), "min_steps": int(fb['min_steps']), "max_steps": int(fb['max_steps']),
+            "avg_cal": int(fb['avg_cal']), "min_cal": int(fb['min_cal']), "max_cal": int(fb['max_cal']),
+        }
+    }, merge=True)
+
+    # BigQuery保存
+    try:
+        bq_insert_rows(settings.BQ_TABLE_MONTHLY, [{
+            "user_id": "demo",
+            "month": month_str,
+            "summary_text": monthly_text,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }])
+    except Exception:
+        pass
+
+    push_line(f"📅 {month_str} の振り返りができました！")
+    return {"ok": True, "month": month_str, "preview": monthly_text[:400]}
