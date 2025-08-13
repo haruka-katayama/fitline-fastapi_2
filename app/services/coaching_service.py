@@ -25,7 +25,7 @@ def build_daily_prompt(day: Dict[str, Any]) -> str:
 500文字以内で今日の状態を要約し、明日に向けて1〜3つの具体的アクションを日本語で提案してください。"""
 
 def build_weekly_prompt(days: List[Dict[str, Any]], meals_by_day: Dict[str, List[Dict[str, Any]]], profile: Optional[Dict[str, Any]] = None) -> str:
-    """週次コーチング用プロンプトを生成"""
+    """コーチング用プロンプトを生成"""
     # 週次本文
     lines = []
     for d in days:
@@ -141,7 +141,7 @@ async def daily_coaching() -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 async def weekly_coaching(dry: bool = False, show_prompt: bool = False) -> Dict[str, Any]:
-    """週次コーチングを実行"""
+    """コーチングを実行"""
     try:
         # 循環インポートを避けるため、ここで import
         from app.services.fitbit_service import fitbit_last_n_days, save_fitbit_daily_firestore
@@ -175,7 +175,7 @@ async def weekly_coaching(dry: bool = False, show_prompt: bool = False) -> Dict[
                 msg = f"(OpenAI error) {e}"
             
             try:
-                send_res = push_line(f"🗓️ 週次コーチング\n{msg}")
+                send_res = push_line(f"🗓️ AIコーチのアドバイス\n{msg}")
             except Exception as e:
                 print(f"[WARN] LINE push failed: {e}")
                 send_res = {"sent": False, "reason": repr(e)}
